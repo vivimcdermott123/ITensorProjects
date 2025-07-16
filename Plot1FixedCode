@@ -1,0 +1,49 @@
+using ITensors, ITensorMPS, Plots
+function heisenberg_mpo(N; J=1.0, S="S=1/2")
+    sites = siteinds(S, N)
+    os = OpSum()
+    for i in 1:N-1
+        os += 0.5*J, "S+", i, "S-", i+1
+        os += 0.5*J, "S-", i, "S+", i+1
+        os += J, "Sz", i, "Sz", i+1
+    end
+    MPO(os, sites), sites
+end
+
+function setup_sweeps(nsweeps, maxdim)
+    s = Sweeps(nsweeps)
+    setmaxdim!(s, maxdim)
+    setcutoff!(s, 1e-10)
+    setnoise!(s, 1e-10)
+    s
+end
+
+function gap_dmrg(L; J=1.0, maxdim=200, nsweeps=10)
+    H, sites = heisenberg_mpo(L; J=J)
+    sweeps = setup_sweeps(nsweeps, maxdim)
+    psi0 = randomMPS(sites, linkdims=10)
+    E0, psi0 = dmrg(H, psi0, sweeps; outputlevel=0)
+    # Try orthogonal excited state
+    psi1 = randomMPS(sites, linkdims=10)
+    E1, psi1 = dmrg(H, [psi0], psi1, sweeps; outputlevel=0, weight=20.0)
+    gap1 = E1 - E0
+end
+
+function plot_gap_dmrg(; Ls=4:2:50, maxdim=200, nsweeps=10)
+    gaps = [gap_dmrg(L; maxdim=maxdim, nsweeps=nsweeps) for L in Ls]
+    plt = plot(Ls, gaps, marker=:o, xlabel="System Size L", ylabel="Energy Gap Δ",
+        title="Energy Gap vs System Size", legend=false, linewidth=2, markersize=6)
+    hline!([0.0], linestyle=:dash, color=:red, alpha=0.5)
+    if all(gaps .> 0)
+        inv_L = 1.0 ./ Ls
+        a_fit = sum(gaps .* inv_L) / sum(inv_L .* inv_L)
+        plot!(Ls, a_fit ./ Ls, linestyle=:dash, color=:green, alpha=0.7)
+    end
+    display(plt)
+    plt, gaps
+end
+
+# Run
+plot_gap_dmrg()
+  
+
