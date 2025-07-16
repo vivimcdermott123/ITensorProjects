@@ -1,0 +1,53 @@
+using ITensors, ITensorMPS, Plots
+
+function heisenberg_mpo(N; J=1.0, S="S=1/2")
+    sites = siteinds(S, N)
+    os = OpSum()
+    for i in 1:N-1
+        os += 0.5*J, "S+", i, "S-", i+1
+        os += 0.5*J, "S-", i, "S+", i+1
+        os += J, "Sz", i, "Sz", i+1
+    end
+    return MPO(os, sites), sites
+end
+
+function setup_sweeps(nsweeps, maxdim)
+    sweeps = Sweeps(nsweeps)
+    setmaxdim!(sweeps, maxdim)
+    setcutoff!(sweeps, 1e-10)
+    setnoise!(sweeps, 1e-10)
+    return sweeps
+end
+
+function magnetization_profile(psi, sites)
+    L = length(sites)
+    return [real(expect(psi, "Sz"; sites=sites, site_range=i:i)[1]) for i in 1:L]
+end
+
+function plot_magnetization_profile(Ls=4:2:20; J=1.0, maxdim=100, nsweeps=10)
+    mag_gs = Float64[]
+    mag_ex = Float64[]
+    
+    for L in Ls
+        H, sites = heisenberg_mpo(L; J=J)
+        sweeps = setup_sweeps(nsweeps, maxdim)
+        
+        psi0_gs = randomMPS(sites, linkdims=10)
+        E0, psi_gs = dmrg(H, psi0_gs, sweeps; outputlevel=0)
+        
+        psi0_ex = randomMPS(sites, linkdims=10)
+        E1, psi_ex = dmrg(H, [psi_gs], psi0_ex, sweeps; outputlevel=0, weight=20.0)
+        
+        mag_gs = magnetization_profile(psi_gs, sites)
+        mag_ex = magnetization_profile(psi_ex, sites)
+    end
+    
+    L = Ls[end]
+    plt = plot(1:L, mag_gs, label="Ground State", xlabel="Site", ylabel="<Sz>", title="Magnetization Profile (L=$L): Ground vs Excited", marker=:o) 
+    plot!(plt, 1:L, mag_ex, label="Excited State", marker=:square)
+    display(plt)
+    
+    return mag_gs, mag_ex
+end
+
+plot_magnetization_profile()
