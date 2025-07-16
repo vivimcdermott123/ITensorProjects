@@ -29,7 +29,7 @@ function gap_dmrg(L; J=1.0, maxdim=200, nsweeps=10)
     gap1 = E1 - E0
 end
 
-function plot_gap_dmrg(; Ls=4:2:50, maxdim=200, nsweeps=10)
+function plot_gap_dmrg(; Ls=4:2:20, maxdim=200, nsweeps=10)
     gaps = [gap_dmrg(L; maxdim=maxdim, nsweeps=nsweeps) for L in Ls]
     plt = plot(Ls, gaps, marker=:o, xlabel="System Size L", ylabel="Energy Gap Δ",
         title="Energy Gap vs System Size", legend=false, linewidth=2, markersize=6)
