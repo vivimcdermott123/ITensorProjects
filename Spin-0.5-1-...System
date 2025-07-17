@@ -1,0 +1,59 @@
+using ITensors, ITensorMPS, Plots
+
+function mixed_spin_chain_sites(N_spin1)
+  N_total = N_spin1 + 2
+  sites = Vector{Index}(undef,N_total)
+  #1st site
+  sites[1] = siteind("S=1/2"; n=1; conserve_qns = true)
+  #Middle sites
+  for i in 2:N_total-1
+    sites[i] = siteind("S=1"; n=i; conserve_qns = true)
+  end 
+  #Last site 
+  sites[N_total] = siteind("S = 1/2"; n= N_total; conserve_qns = true)
+  return sites
+end 
+
+function mixed_heisenberg_mpo(sites; J=1.0)
+  N = length(sites)
+  os = OpSum()
+  for i in 1:N-1, 
+    os += 0.5J, "S+", i, "S-", i+1
+    os += 0.5J, "S-", i, "S+", i+1
+    os += J, "Sz", i, "Sz, i+1
+  end 
+  return MPO(os, sites)
+end 
+
+function run_dmrg(H, psi0; maxdim =800, nsweeps = 10)
+  sweeps = Sweeps(nsweeps)
+  setmaxdim!(sweeps, maxdim)
+  setcutoff!(sweeps, 1e-10)
+  setnoise!(sweeps, 1e-10)
+  E, psi = dmrg(H, psi0, sweeps)
+  return E, psi
+end 
+
+function magnetization_profile(psi, sites)
+  return[real(expect(psi, "Sz"; sites=sites, site_range = I) [1]) for i in 1:length(sites)]
+end 
+
+function plot_magnetization_profile(L=20; J=1.0, maxdim = 100)
+    H, sites = heisenberg_mpo(L; J=J)
+
+    psi0_gs = MPS(sites, mixed_spin_chain_sites(sites, div(L,2)))
+    _, psi_gs = run_dmrg(H, psi0_gs; maxdim=maxdim)
+
+    psi0_ex = MPS(sites, mixed_spin_chain_sites(sites, div(L,2) + 1))
+    _, psi_ex = run_dmrg(H, psi0_ex; maxdim=maxdim)
+
+    magnetization_gs = magnetization_profile(psi_gs, sites)
+    magnetization_ex = magnetization_profile(psi_ex, sites)
+
+    plt = plot(1:L, magnetization_gs, label="Ground State", xlabel="Site", ylabel="<Sz>", title="Magnetization: Ground vs Excited", marker=:o)
+    plot!(plt, 1:L, magnetization_ex, label="Excited State", marker=:square)
+    display(plt)
+end
+plot_magnetization_profile()
+
+println("Sum of <Sz> (excited) = $sum(magnetization_ex)")
