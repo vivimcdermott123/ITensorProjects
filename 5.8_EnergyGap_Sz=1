@@ -1,6 +1,6 @@
 using ITensors, ITensorMPS
 
-function gap_dmrg
+function calculate_gap_dmrg
   N = 101
   sites = siteinds("S=1",N; conserve_qns = true)
   os = OpSum()
@@ -28,7 +28,7 @@ end
 
 function plot_gap_dmrg(; Ls=4:2:20)
     #gap 
-    gaps = [gap_dmrg(L) for L in Ls]
+    gaps = [calculate_gap_dmrg(L) for L in Ls]
     plt = plot(Ls, gaps, marker=:o, xlabel = "System Size L", ylabel = "Energy Gap", title="Energy Gap vs System Size", legend=false, linewidth = 2.5, markersize = 5.5)
 
     #fit lines
