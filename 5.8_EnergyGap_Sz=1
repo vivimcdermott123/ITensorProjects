@@ -1,6 +1,6 @@
 using ITensors, ITensorMPS, Plots
 
-function calculate_gap_dmrg()
+function calculate_gap_dmrg(L)
   L = 21
   sites = siteinds("S=1",L; conserve_qns = true)
   os = OpSum()
@@ -11,7 +11,7 @@ function calculate_gap_dmrg()
   end 
   H = MPO(os, sites)
 
-  state = [isodd(n) ? "Up" : "Dn" for n=1:N] 
+  state = [isodd(n) ? "Up" : "Dn" for n=1:L] 
   psi0 = MPS(sites, state)
   psi1 = MPS(sites, state)
 
@@ -22,7 +22,7 @@ function calculate_gap_dmrg()
   E0, psi0 = dmrg(H, psi0; nsweeps, maxdim, cutoff) 
   E1, psi1 = dmrg(H, [psi0], psi1; nsweeps, maxdim, cutoff, weights = 20.0)
   gap1 = E1 - E0
-  println("L=$L, E0 = $E0, E1 = $E1, gap = $gap1)
+  println("L=$L, E0 = $E0, E1 = $E1, gap = $gap1")
   return gap1 
 end 
 
