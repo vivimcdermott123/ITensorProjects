@@ -1,10 +1,10 @@
-using ITensors, ITensorMPS
+using ITensors, ITensorMPS, Plots
 
-function calculate_gap_dmrg
-  N = 101
-  sites = siteinds("S=1",N; conserve_qns = true)
+function calculate_gap_dmrg()
+  L = 21
+  sites = siteinds("S=1",L; conserve_qns = true)
   os = OpSum()
-  for i in 1:N-1
+  for i in 1:L-1
     os += "Sz", i, "Sz", i+1
     os += "S+", i, "S-", i+1
     os += "S-", i, "S+", i+1
@@ -26,7 +26,7 @@ function calculate_gap_dmrg
   return gap1 
 end 
 
-function plot_gap_dmrg(; Ls=4:2:20)
+function plot_gap_dmrg(; Ls=4:2:21)
     #gap 
     gaps = [calculate_gap_dmrg(L) for L in Ls]
     plt = plot(Ls, gaps, marker=:o, xlabel = "System Size L", ylabel = "Energy Gap", title="Energy Gap vs System Size", legend=false, linewidth = 2.5, markersize = 5.5)
