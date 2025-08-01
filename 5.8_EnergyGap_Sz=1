@@ -1,0 +1,45 @@
+using ITensors, ITensorMPS
+
+function gap_dmrg
+  N = 101
+  sites = siteinds("S=1",N; conserve_qns = true)
+  os = OpSum()
+  for i in 1:N-1
+    os += "Sz", i, "Sz", i+1
+    os += "S+", i, "S-", i+1
+    os += "S-", i, "S+", i+1
+  end 
+  H = MPO(os, sites)
+
+  state = [isodd(n) ? "Up" : "Dn" for n=1:N] 
+  psi0 = MPS(sites, state)
+  psi1 = MPS(sites, state)
+
+  nsweeps = 5
+  maxdim = [10, 20, 100, 100, 200] 
+  cutoff = [1e-10] 
+
+  E0, psi0 = dmrg(H, psi0; nsweeps, maxdim, cutoff) 
+  E1, psi1 = dmrg(H, [psi0], psi1; nsweeps, maxdim, cutoff, weights = 20.0)
+  gap1 = E1 - E0
+  println("L=$L, E0 = $E0, E1 = $E1, gap = $gap1)
+  return gap1 
+end 
+
+function plot_gap_dmrg(; Ls=4:2:20)
+    #gap 
+    gaps = [gap_dmrg(L) for L in Ls]
+    plt = plot(Ls, gaps, marker=:o, xlabel = "System Size L", ylabel = "Energy Gap", title="Energy Gap vs System Size", legend=false, linewidth = 2.5, markersize = 5.5)
+
+    #fit lines
+    hline!([0.0], linestyle=:dash, color=:red, alpha=0.5)
+    inv_L = 1.0./Ls
+    a_fit = sum(gaps .* inv_L)/sum(inv_L .* inv_L) #element-wise multiplication
+    plot!(Ls, a_fit ./ Ls, linestyle=:dash, color=:green, alpha=0.5)
+
+    
+    display(plt)
+    plt, gaps
+end
+
+plot_gap_dmrg() 
