@@ -1,5 +1,5 @@
 using ITensors, ITensorMPS, Plots
-function heisenberg_mpo(N; J=1.0, S="S=1";conserve_qns=true)
+function heisenberg_mpo(N; J=1.0, S="S=1",conserve_qns=true)
     sites = siteinds(S, N)
     os = OpSum()
     for i in 1:N-1
@@ -33,7 +33,7 @@ function gap_dmrg(L; J=1.0, maxdim=200, nsweeps=10)
     return gap1
 end
 
-function plot_gap_dmrg(; Ls=4:2:20, maxdim=200, nsweeps=10)
+function plot_gap_dmrg(; Ls=4:2:21, maxdim=200, nsweeps=10)
     gaps = [gap_dmrg(L; maxdim=maxdim, nsweeps=nsweeps) for L in Ls]
     plt = plot(Ls, gaps, marker=:o, xlabel = "System Size L", ylabel = "Energy Gap", title="Energy Gap vs System Size", legend=false, linewidth = 2.5, markersize = 5.5)
     hline!([0.0], linestyle=:dash, color=:red, alpha=0.5)
