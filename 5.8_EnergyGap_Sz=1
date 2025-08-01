@@ -27,9 +27,9 @@ function calculate_gap_dmrg(L)
 end 
 
 function plot_gap_dmrg(; Ls=4:2:21)
-    #gap 
+    #gap (NO SPACES FOR PLT FUNCTION!)
     gaps = [calculate_gap_dmrg(L) for L in Ls]
-    plt = plot(Ls, gaps, marker=:o, xlabel = "System Size L", ylabel = "Energy Gap", title="Energy Gap vs System Size", legend=false, linewidth = 2.5, markersize = 5.5)
+    plt = plot(Ls, gaps, marker=:o, xlabel="System Size L", ylabel="Energy Gap", title="Energy Gap vs System Size", legend=false, linewidth=2.5, markersize=5.5)
 
     #fit lines
     hline!([0.0], linestyle=:dash, color=:red, alpha=0.5)
